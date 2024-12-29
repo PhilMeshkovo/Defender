@@ -2,13 +2,19 @@ package com.phil.antispam.defender;
 
 import java.util.Arrays;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+
 public class AntiSpamBot extends TelegramLongPollingBot {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AntiSpamBot.class);
+
 
     //TODO продумать откуда лучше брать слова определяющие спам
     private static final List<String> SPAM_KEYWORDS = Arrays.asList("spam", "buy now", "discount", "дурак", "дебил");
@@ -38,7 +44,7 @@ public class AntiSpamBot extends TelegramLongPollingBot {
             String messageText = message.getText();
             Long chatId = message.getChatId();
 
-            System.out.println("Получено сообщение: " + messageText);
+            LOGGER.info("Получено сообщение: {}", message);
 
             try {
                 if (isSpam(messageText)) {
@@ -48,6 +54,7 @@ public class AntiSpamBot extends TelegramLongPollingBot {
                     processCommand(chatId, messageText);
                 }
             } catch (TelegramApiException e) {
+                LOGGER.error(e.getMessage(), e);
                 throw new RuntimeException(e.getMessage(), e);
             }
         }
@@ -64,7 +71,7 @@ public class AntiSpamBot extends TelegramLongPollingBot {
         deleteMessage.setChatId(chatId.toString());
         deleteMessage.setMessageId(messageId);
         execute(deleteMessage);
-        System.out.println("Удалено сообщение ID: " + messageId);
+        LOGGER.info("Сообщение удалено: {}", messageId);
     }
 
     private void sendMessage(Long chatId, String text) throws TelegramApiException {
@@ -72,7 +79,7 @@ public class AntiSpamBot extends TelegramLongPollingBot {
         sendMessage.setChatId(chatId.toString());
         sendMessage.setText(text);
         execute(sendMessage);
-        System.out.println("Отправлено сообщение: " + text);
+        LOGGER.info("Сообщение отправлено: {}", text);
     }
 
     private void processCommand(Long chatId, String messageText) throws TelegramApiException {
