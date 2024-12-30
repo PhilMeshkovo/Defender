@@ -1,30 +1,40 @@
 package com.phil.antispam.defender;
 
-import java.util.Arrays;
+import com.phil.antispam.repository.SpamKeywordRepository;
 import java.util.List;
+import javax.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-
+@Service
 public class AntiSpamBot extends TelegramLongPollingBot {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AntiSpamBot.class);
 
+    private List<String> spamKeywords;
 
-    //TODO продумать откуда лучше брать слова определяющие спам
-    private static final List<String> SPAM_KEYWORDS = Arrays.asList("spam", "buy now", "discount", "дурак", "дебил");
+    @Value("${telegram.bot.username}")
+    private String botUsername;
 
-    private final String botUsername;
-    private final String botToken;
+    @Value("${telegram.bot.token}")
+    private String botToken;
 
-    public AntiSpamBot(String botUsername, String botToken) {
-        this.botUsername = botUsername;
-        this.botToken = botToken;
+
+    @Autowired
+    private SpamKeywordRepository spamKeywordRepository;
+
+
+    @PostConstruct
+    private void loadSpamKeywords() {
+        spamKeywords = spamKeywordRepository.findKeywordAll();
     }
 
     @Override
@@ -49,7 +59,7 @@ public class AntiSpamBot extends TelegramLongPollingBot {
             try {
                 if (isSpam(messageText)) {
                     deleteMessage(chatId, message.getMessageId());
-                    sendMessage(chatId, "Сообщение удалено: обнаружен спам.");
+                    sendMessageHTML(chatId, "🚫 <b>Сообщение удалено:</b> 🔍 <i>обнаружен спам.</i>");
                 } else {
                     processCommand(chatId, messageText);
                 }
@@ -61,8 +71,7 @@ public class AntiSpamBot extends TelegramLongPollingBot {
     }
 
     private boolean isSpam(String message) {
-        return SPAM_KEYWORDS.stream().anyMatch(message.toLowerCase()::contains)
-               || message.contains("http://") || message.contains("https://");
+        return spamKeywords.stream().anyMatch(message.toLowerCase()::contains);
     }
 
     private void deleteMessage(Long chatId, Integer messageId) throws TelegramApiException {
@@ -82,13 +91,24 @@ public class AntiSpamBot extends TelegramLongPollingBot {
         LOGGER.info("Сообщение отправлено: {}", text);
     }
 
+    private void sendMessageHTML(Long chatId, String text) throws TelegramApiException {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId.toString());
+        sendMessage.setText(text);
+        sendMessage.setParseMode("HTML");
+        execute(sendMessage);
+        LOGGER.info("Сообщение отправлено: {}", text);
+    }
+
     private void processCommand(Long chatId, String messageText) throws TelegramApiException {
         switch (messageText) {
             case "/start":
-                sendMessage(chatId, "Привет! Я антиспам-бот.");
+                sendMessageHTML(chatId, "👋 Привет! Я антиспам-бот. \uD83D\uDEE1\uFE0F");
                 break;
             case "/help":
-                sendMessage(chatId, "Доступные команды:\n/start - Запуск бота\n/help - Показать справку");
+                sendMessageHTML(chatId, "📜 *Доступные команды:*\n" +
+                                        "✅ /start - Запуск бота\n" +
+                                        "ℹ️ /help - Показать справку");
                 break;
             default:
                 break;
