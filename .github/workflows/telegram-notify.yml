@@ -1,0 +1,39 @@
+name: Telegram Notifications
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - closed
+  issues:
+    types:
+      - opened
+
+jobs:
+  notify-telegram:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Send Telegram Notification
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MESSAGE=""
+          if [[ $GITHUB_EVENT_NAME == "push" ]]; then
+            MESSAGE="🚀 A push was made to the 'main' branch in the repository: ${{ github.repository }}.\nCommit message: ${{ github.event.head_commit.message }}"
+          elif [[ $GITHUB_EVENT_NAME == "pull_request" ]]; then
+            MESSAGE="🔄 Pull Request Event in the repository: ${{ github.repository }}.\nAction: ${{ github.event.action }}\nTitle: ${{ github.event.pull_request.title }}\nURL: ${{ github.event.pull_request.html_url }}"
+          elif [[ $GITHUB_EVENT_NAME == "issues" ]]; then
+            MESSAGE="📌 Issue Event in the repository: ${{ github.repository }}.\nAction: ${{ github.event.action }}\nTitle: ${{ github.event.issue.title }}\nURL: ${{ github.event.issue.html_url }}"
+          fi
+
+          curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          -H "Content-Type: application/json" \
+          -d "{\"chat_id\": \"${{ secrets.TELEGRAM_CHAT_ID }}\", \"text\": \"$MESSAGE\", \"parse_mode\": \"Markdown\"}"
