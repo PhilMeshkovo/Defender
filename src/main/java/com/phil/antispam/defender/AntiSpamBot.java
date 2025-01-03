@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -34,7 +35,7 @@ public class AntiSpamBot extends TelegramLongPollingBot {
 
     @PostConstruct
     private void loadSpamKeywords() {
-        spamKeywords = spamKeywordRepository.findKeywordAll();
+        spamKeywords = spamKeywordRepository.findAllKeywords();
     }
 
     @Override
@@ -75,8 +76,8 @@ public class AntiSpamBot extends TelegramLongPollingBot {
     }
 
     private void deleteMessage(Long chatId, Integer messageId) throws TelegramApiException {
-        org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage deleteMessage =
-            new org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage();
+        DeleteMessage deleteMessage =
+            new DeleteMessage();
         deleteMessage.setChatId(chatId.toString());
         deleteMessage.setMessageId(messageId);
         execute(deleteMessage);
