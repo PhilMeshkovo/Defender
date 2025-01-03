@@ -1,14 +1,22 @@
 package com.phil.antispam.repository;
 
-import com.phil.antispam.model.SpamKeyword;
 import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.NativeQuery;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface SpamKeywordRepository extends JpaRepository<SpamKeyword, Long> {
+public class SpamKeywordRepository {
 
-    @NativeQuery("SELECT keyword FROM spam_keywords")
-    List<String> findKeywordAll();
+    private final JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    public SpamKeywordRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public List<String> findAllKeywords() {
+        String sql = "SELECT keyword FROM spam_keywords";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("keyword"));
+    }
 }
