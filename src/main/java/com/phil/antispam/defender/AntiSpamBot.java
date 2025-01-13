@@ -34,7 +34,7 @@ public class AntiSpamBot extends TelegramLongPollingBot {
 
 
     @PostConstruct
-    private void loadSpamKeywords() {
+    protected void loadSpamKeywords() {
         spamKeywords = spamKeywordRepository.findAllKeywords();
     }
 
@@ -71,11 +71,11 @@ public class AntiSpamBot extends TelegramLongPollingBot {
         }
     }
 
-    private boolean isSpam(String message) {
+    protected boolean isSpam(String message) {
         return spamKeywords.stream().anyMatch(message.toLowerCase()::contains);
     }
 
-    private void deleteMessage(Long chatId, Integer messageId) throws TelegramApiException {
+    protected void deleteMessage(Long chatId, Integer messageId) throws TelegramApiException {
         DeleteMessage deleteMessage =
             new DeleteMessage();
         deleteMessage.setChatId(chatId.toString());
@@ -84,15 +84,7 @@ public class AntiSpamBot extends TelegramLongPollingBot {
         LOGGER.info("Сообщение удалено: {}", messageId);
     }
 
-    private void sendMessage(Long chatId, String text) throws TelegramApiException {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId.toString());
-        sendMessage.setText(text);
-        execute(sendMessage);
-        LOGGER.info("Сообщение отправлено: {}", text);
-    }
-
-    private void sendMessageHTML(Long chatId, String text) throws TelegramApiException {
+    protected void sendMessageHTML(Long chatId, String text) throws TelegramApiException {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId.toString());
         sendMessage.setText(text);
@@ -101,7 +93,7 @@ public class AntiSpamBot extends TelegramLongPollingBot {
         LOGGER.info("Сообщение отправлено: {}", text);
     }
 
-    private void processCommand(Long chatId, String messageText) throws TelegramApiException {
+    protected void processCommand(Long chatId, String messageText) throws TelegramApiException {
         switch (messageText) {
             case "/start":
                 sendMessageHTML(chatId, "👋 Привет! Я антиспам-бот. \uD83D\uDEE1\uFE0F");
